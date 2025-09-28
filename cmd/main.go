@@ -21,6 +21,9 @@ var baseStyle = lipgloss.NewStyle().
 	BorderStyle(lipgloss.NormalBorder()).
 	BorderForeground(lipgloss.Color("240"))
 
+var focusedStyle = baseStyle.Copy().
+	BorderForeground(lipgloss.Color("229"))
+
 type model struct {
 	keys            keyMap
 	help            help.Model
@@ -208,9 +211,18 @@ func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 }
 
 func (m model) View() string {
+	var containerStyle, imageStyle lipgloss.Style
+	if m.containersTable.Focused() {
+		containerStyle = focusedStyle
+		imageStyle = baseStyle
+	} else {
+		containerStyle = baseStyle
+		imageStyle = focusedStyle
+	}
+
 	tables := lipgloss.JoinVertical(lipgloss.Left,
-		baseStyle.Render(m.containersTable.View()),
-		baseStyle.Render(m.imageTable.View()),
+		containerStyle.Render(m.containersTable.View()),
+		imageStyle.Render(m.imageTable.View()),
 	)
 
 	mainContent := lipgloss.JoinHorizontal(lipgloss.Top,
