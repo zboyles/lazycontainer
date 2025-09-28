@@ -116,14 +116,17 @@ func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		m.imageTable.SetWidth(tableWidth)
 
 		// Recalculate column widths
-		colWidth := tableWidth - 15 // Keep first column fixed
+		containerImageColWidth := tableWidth - 15 // Keep first column fixed
 		m.containersTable.SetColumns([]table.Column{
 			{Title: "Containers", Width: 10},
-			{Title: "Image", Width: colWidth},
+			{Title: "Image", Width: containerImageColWidth},
 		})
+
+		imageTagColWidth := tableWidth / 3
+		imageNameColWidth := tableWidth - imageTagColWidth - 5 // Adjust for padding/borders
 		m.imageTable.SetColumns([]table.Column{
-			{Title: "Images", Width: 10},
-			{Title: "Tag", Width: colWidth},
+			{Title: "Images", Width: imageNameColWidth},
+			{Title: "Tag", Width: imageTagColWidth},
 		})
 
 	case tea.KeyMsg:
