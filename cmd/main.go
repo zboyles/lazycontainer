@@ -103,12 +103,14 @@ func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		helpViewHeight := lipgloss.Height(m.help.View(m.keys))
 		mainContentHeight := m.height - helpViewHeight
 
-		m.viewport.Width = m.width/2 - 9
-		m.viewport.Height = mainContentHeight - 4
-
+		// Adjust for borders. Each table has a 2-line border. The viewport has one.
 		tableHeight := (mainContentHeight - 4) / 2
 		m.containersTable.SetHeight(tableHeight)
 		m.imageTable.SetHeight(tableHeight)
+
+		m.viewport.Height = mainContentHeight - 2
+		m.viewport.Width = m.width/2 - 5
+
 		m.containersTable.SetWidth(m.width / 2)
 		m.imageTable.SetWidth(m.width / 2)
 
@@ -191,24 +193,14 @@ func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 }
 
 func (m model) View() string {
-	helpViewHeight := lipgloss.Height(m.help.View(m.keys))
-	mainContentHeight := m.height - helpViewHeight
-
 	tables := lipgloss.JoinVertical(lipgloss.Left,
 		baseStyle.Render(m.containersTable.View()),
 		baseStyle.Render(m.imageTable.View()),
 	)
 
-	infoBoxStyle := lipgloss.NewStyle().
-		BorderStyle(lipgloss.NormalBorder()).
-		BorderForeground(lipgloss.Color("240")).
-		Width(m.width/2 - 5).
-		Height(mainContentHeight).
-		Padding(1, 2)
-
 	mainContent := lipgloss.JoinHorizontal(lipgloss.Top,
 		tables,
-		infoBoxStyle.Render(m.viewport.View()),
+		baseStyle.Render(m.viewport.View()),
 	)
 
 	helpView := m.help.View(m.keys)
