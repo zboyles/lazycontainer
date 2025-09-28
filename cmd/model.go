@@ -41,14 +41,24 @@ func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		m.height = msg.Height
 		m.help.Width = msg.Width
 
-		helpViewHeight := lipgloss.Height(m.help.View(m.keys))
-		mainContentHeight := m.height - helpViewHeight
+		// Measure help height and reserve a small bottom padding so the legend
+		// doesn't touch the terminal border.
+		helpRawHeight := lipgloss.Height(m.help.View(m.keys))
+		helpPadding := 1
+		mainContentHeight := m.height - helpRawHeight - helpPadding
 
-		// Adjust for borders. Each table has a 2-line border. The viewport has one.
-		tableHeight := (mainContentHeight - 4) / 2
-		m.containersTable.SetHeight(tableHeight)
-		m.imageTable.SetHeight(tableHeight)
+		// Add a one-line gap between the two left tables. Each table's visual box
+		// adds 2 lines (top+bottom) due to borders, so subtract 4 for the two
+		// tables plus the 1-line gap before splitting the remainder evenly.
+		gap := 1
+		tableHeight := (mainContentHeight - 4 - gap) / 2
+		topTableHeight := tableHeight
+		bottomTableHeight := tableHeight
+		m.containersTable.SetHeight(topTableHeight)
+		m.imageTable.SetHeight(bottomTableHeight)
 
+		// The viewport itself is wrapped with a border via baseStyle in View(), so
+		// give it an inner height that's 2 lines less than the available area.
 		m.viewport.Height = mainContentHeight - 2
 		m.viewport.Width = m.width/2 - 5
 
@@ -158,8 +168,11 @@ func (m model) View() string {
 		imageStyle = focusedStyle
 	}
 
+	// Add a visual one-line spacer between the two tables without borders.
+	spacer := lipgloss.NewStyle().Height(1).Render("")
 	tables := lipgloss.JoinVertical(lipgloss.Left,
 		containerStyle.Render(m.containersTable.View()),
+		spacer,
 		imageStyle.Render(m.imageTable.View()),
 	)
 
@@ -168,7 +181,7 @@ func (m model) View() string {
 		baseStyle.Render(m.viewport.View()),
 	)
 
-	helpView := m.help.View(m.keys)
+	helpView := helpStyle.Render(m.help.View(m.keys))
 
 	return lipgloss.JoinVertical(lipgloss.Left,
 		mainContent,
