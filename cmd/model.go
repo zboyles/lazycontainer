@@ -7,6 +7,7 @@ import (
 
 	"lazycontainer/pkg/container"
 	"lazycontainer/pkg/image"
+
 	"github.com/charmbracelet/bubbles/help"
 	"github.com/charmbracelet/bubbles/key"
 	"github.com/charmbracelet/bubbles/table"
@@ -25,6 +26,7 @@ type model struct {
 	viewport        viewport.Model
 	width           int
 	height          int
+	popup           popupModel
 }
 
 func (m model) Init() tea.Cmd {
@@ -62,6 +64,9 @@ func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		m.viewport.Height = mainContentHeight - 2
 		m.viewport.Width = m.width/2 - 5
 
+		// Popup sizing (centered modal)
+		m.popup.SetSize(m.width, mainContentHeight)
+
 		tableWidth := m.width / 2
 		m.containersTable.SetWidth(tableWidth)
 		m.imageTable.SetWidth(tableWidth)
@@ -81,6 +86,12 @@ func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		})
 
 	case tea.KeyMsg:
+		// If popup is active, let it handle keys first
+		if m.popup.active {
+			var cmd tea.Cmd
+			m.popup, cmd = m.popup.Update(msg)
+			return m, cmd
+		}
 		if key.Matches(msg, m.keys.Enter) {
 			titleStyle := lipgloss.NewStyle().Bold(true).Foreground(lipgloss.Color("212"))
 			var content string
@@ -141,6 +152,10 @@ func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			m.viewport.LineUp(1)
 		case key.Matches(msg, m.keys.ScrollDown):
 			m.viewport.LineDown(1)
+		case key.Matches(msg, m.keys.Actions):
+			// Build context menu items based on current focus
+			items := m.contextMenuItems()
+			m.popup.OpenContext(items)
 		}
 	}
 
@@ -154,6 +169,13 @@ func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 
 	m.viewport, cmd = m.viewport.Update(msg)
 	cmds = append(cmds, cmd)
+
+	// Handle custom messages that set viewport content
+	switch v := msg.(type) {
+	case viewportMsg:
+		m.viewport.SetContent(v.content)
+		m.viewport.GotoTop()
+	}
 
 	return m, tea.Batch(cmds...)
 }
@@ -183,8 +205,65 @@ func (m model) View() string {
 
 	helpView := helpStyle.Render(m.help.View(m.keys))
 
-	return lipgloss.JoinVertical(lipgloss.Left,
+	root := lipgloss.JoinVertical(lipgloss.Left,
 		mainContent,
 		helpView,
 	)
+
+	if m.popup.active {
+		// Draw only the modal centered in the screen while active.
+		return lipgloss.Place(m.width, m.height, lipgloss.Center, lipgloss.Center, m.popup.View())
+	}
+
+	return root
 }
+
+// contextMenuItems builds the actions available for the current selection.
+func (m model) contextMenuItems() []actionItem {
+	var items []actionItem
+	if m.containersTable.Focused() && len(m.containers) > 0 {
+		idx := m.containersTable.Cursor()
+		if idx >= 0 && idx < len(m.containers) {
+			c := m.containers[idx]
+			items = append(items,
+				actionItem{title: "Inspect", desc: "Show container details", enabled: true, onSelect: func() tea.Cmd {
+					return func() tea.Msg { return tea.KeyMsg{Type: tea.KeyEnter} }
+				}},
+				actionItem{title: "Logs", desc: "Open logs in the right panel", enabled: true, onSelect: func() tea.Cmd {
+					return func() tea.Msg {
+						content, err := container.GetLogs(c.ID)
+						if err != nil {
+							content = fmt.Sprintf("Error: %v", err)
+						}
+						return viewportMsg{content: content}
+					}
+				}},
+				actionItem{title: "Start", desc: "Start container", enabled: false},
+				actionItem{title: "Stop", desc: "Stop container", enabled: false},
+				actionItem{title: "Remove", desc: "Remove container", enabled: false},
+			)
+		}
+	} else if m.imageTable.Focused() && len(m.images) > 0 {
+		row := m.imageTable.SelectedRow()
+		name := ""
+		if len(row) > 0 {
+			name = row[0]
+		}
+		items = append(items,
+			actionItem{title: "Inspect", desc: "Show image details", enabled: true, onSelect: func() tea.Cmd {
+				return func() tea.Msg { return tea.KeyMsg{Type: tea.KeyEnter} }
+			}},
+			actionItem{title: "Pull", desc: "Pull image", enabled: false},
+			actionItem{title: "Run", desc: "Run image", enabled: false},
+			actionItem{title: "Remove", desc: "Remove image", enabled: false},
+		)
+		_ = name
+	}
+	if len(items) == 0 {
+		items = []actionItem{{title: "No actions available", desc: "", enabled: false}}
+	}
+	return items
+}
+
+// viewportMsg is a small message to set content in the viewport.
+type viewportMsg struct{ content string }

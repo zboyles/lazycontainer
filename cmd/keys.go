@@ -10,10 +10,11 @@ type keyMap struct {
 	Enter      key.Binding
 	ScrollUp   key.Binding
 	ScrollDown key.Binding
+	Actions    key.Binding
 }
 
 func (k keyMap) ShortHelp() []key.Binding {
-	return []key.Binding{k.Tab, k.Enter, k.ScrollDown, k.ScrollUp, k.Quit}
+	return []key.Binding{k.Tab, k.Enter, k.ScrollDown, k.ScrollUp, k.Actions, k.Quit}
 }
 
 func (k keyMap) FullHelp() [][]key.Binding {
@@ -52,5 +53,9 @@ var keys = keyMap{
 	ScrollDown: key.NewBinding(
 		key.WithKeys("j"),
 		key.WithHelp("j", "scroll down"),
+	),
+	Actions: key.NewBinding(
+		key.WithKeys("a"),
+		key.WithHelp("a", "actions"),
 	),
 }

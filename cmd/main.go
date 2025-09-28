@@ -101,6 +101,9 @@ func main() {
 		viewport:        viewport,
 	}
 
+	// Initialize popup with a reasonable default size; it will be recalculated on first resize.
+	m.popup = newPopup(50, 12)
+
 	p := tea.NewProgram(m, tea.WithAltScreen())
 	if _, err := p.Run(); err != nil {
 		fmt.Println("Error running program:", err)
