@@ -111,8 +111,20 @@ func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		m.viewport.Height = mainContentHeight - 2
 		m.viewport.Width = m.width/2 - 5
 
-		m.containersTable.SetWidth(m.width / 2)
-		m.imageTable.SetWidth(m.width / 2)
+		tableWidth := m.width / 2
+		m.containersTable.SetWidth(tableWidth)
+		m.imageTable.SetWidth(tableWidth)
+
+		// Recalculate column widths
+		colWidth := tableWidth - 15 // Keep first column fixed
+		m.containersTable.SetColumns([]table.Column{
+			{Title: "Containers", Width: 10},
+			{Title: "Image", Width: colWidth},
+		})
+		m.imageTable.SetColumns([]table.Column{
+			{Title: "Images", Width: 10},
+			{Title: "Tag", Width: colWidth},
+		})
 
 	case tea.KeyMsg:
 		if key.Matches(msg, m.keys.Enter) {
