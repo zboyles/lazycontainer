@@ -19,3 +19,7 @@ var modalStyle = lipgloss.NewStyle().
 	BorderStyle(lipgloss.RoundedBorder()).
 	BorderForeground(lipgloss.Color("240")).
 	Padding(1, 2)
+
+// Very light dim to keep background visible while a modal is open.
+var dimBackgroundStyle = lipgloss.NewStyle().
+	Background(lipgloss.Color("235")) // subtle dark gray

@@ -55,7 +55,7 @@ var keys = keyMap{
 		key.WithHelp("j", "scroll down"),
 	),
 	Actions: key.NewBinding(
-		key.WithKeys("a"),
-		key.WithHelp("a", "actions"),
+		key.WithKeys("m"),
+		key.WithHelp("m", "menu"),
 	),
 }

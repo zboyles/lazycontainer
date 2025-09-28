@@ -24,6 +24,7 @@ type model struct {
 	imageTable      table.Model
 	images          []image.Image
 	viewport        viewport.Model
+	viewportTitle   string
 	width           int
 	height          int
 	popup           popupModel
@@ -99,6 +100,7 @@ func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			if m.containersTable.Focused() {
 				index := m.containersTable.Cursor()
 				containerSelected := m.containers[index]
+				m.viewportTitle = fmt.Sprintf("Container: %s", containerSelected.Image)
 				containerDetails, err := container.GetDetails(containerSelected.ID)
 				if err != nil {
 					content = fmt.Sprintf("Error inspecting container %s: %v", containerSelected.ID, err)
@@ -115,7 +117,9 @@ func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			}
 
 			if m.imageTable.Focused() {
-				imageDetails, err := image.GetDetails(m.imageTable.SelectedRow()[0])
+				selected := m.imageTable.SelectedRow()[0]
+				m.viewportTitle = fmt.Sprintf("Image: %s", selected)
+				imageDetails, err := image.GetDetails(selected)
 				if err != nil {
 					content = fmt.Sprintf("Error inspecting image %s: %v", m.imageTable.SelectedRow()[0], err)
 				} else {
@@ -132,7 +136,9 @@ func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 					content = builder.String()
 				}
 			}
-			m.viewport.SetContent(content)
+			// Prepend a small title header for context
+			header := lipgloss.NewStyle().Bold(true).Render(m.viewportTitle)
+			m.viewport.SetContent(header + "\n\n" + content)
 			m.viewport.GotoTop()
 			return m, nil
 		}
@@ -149,9 +155,9 @@ func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 				m.containersTable.Focus()
 			}
 		case key.Matches(msg, m.keys.ScrollUp):
-			m.viewport.LineUp(1)
+			m.viewport.ScrollUp(1)
 		case key.Matches(msg, m.keys.ScrollDown):
-			m.viewport.LineDown(1)
+			m.viewport.ScrollDown(1)
 		case key.Matches(msg, m.keys.Actions):
 			// Build context menu items based on current focus
 			items := m.contextMenuItems()
@@ -173,7 +179,11 @@ func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	// Handle custom messages that set viewport content
 	switch v := msg.(type) {
 	case viewportMsg:
-		m.viewport.SetContent(v.content)
+		if m.containersTable.Focused() {
+			m.viewportTitle = "Logs"
+		}
+		header := lipgloss.NewStyle().Bold(true).Render(m.viewportTitle)
+		m.viewport.SetContent(header + "\n\n" + v.content)
 		m.viewport.GotoTop()
 	}
 
@@ -211,8 +221,13 @@ func (m model) View() string {
 	)
 
 	if m.popup.active {
-		// Draw only the modal centered in the screen while active.
-		return lipgloss.Place(m.width, m.height, lipgloss.Center, lipgloss.Center, m.popup.View())
+		// Keep background content visible with a subtle dim and draw the modal centered.
+		dimLayer := dimBackgroundStyle.
+			Width(m.width).
+			Height(m.height).
+			Render(strings.Repeat(" ", m.width*m.height))
+		centered := lipgloss.Place(m.width, m.height, lipgloss.Center, lipgloss.Center, m.popup.View())
+		return root + dimLayer + centered
 	}
 
 	return root

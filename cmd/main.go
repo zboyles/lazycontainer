@@ -99,6 +99,7 @@ func main() {
 		imageTable:      imageTable,
 		images:          images,
 		viewport:        viewport,
+		viewportTitle:   "Select an item to see details",
 	}
 
 	// Initialize popup with a reasonable default size; it will be recalculated on first resize.
