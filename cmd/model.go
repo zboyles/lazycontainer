@@ -87,8 +87,12 @@ func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		})
 
 	case tea.KeyMsg:
-		// If popup is active, let it handle keys first
+		// If popup is active, allow toggle with 'm' and otherwise route to popup first
 		if m.popup.active {
+			if key.Matches(msg, m.keys.Actions) {
+				m.popup.Close()
+				return m, nil
+			}
 			var cmd tea.Cmd
 			m.popup, cmd = m.popup.Update(msg)
 			return m, cmd
@@ -158,10 +162,20 @@ func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			m.viewport.ScrollUp(1)
 		case key.Matches(msg, m.keys.ScrollDown):
 			m.viewport.ScrollDown(1)
+		case key.Matches(msg, m.keys.PageLeft):
+			// For now: half-page up in viewport
+			m.viewport.ScrollUp(m.viewport.Height / 2)
+		case key.Matches(msg, m.keys.PageRight):
+			// For now: half-page down in viewport
+			m.viewport.ScrollDown(m.viewport.Height / 2)
 		case key.Matches(msg, m.keys.Actions):
-			// Build context menu items based on current focus
-			items := m.contextMenuItems()
-			m.popup.OpenContext(items)
+			// Toggle behavior: close if already open, otherwise build items and open.
+			if m.popup.active {
+				m.popup.Close()
+			} else {
+				items := m.contextMenuItems()
+				m.popup.OpenContext(items)
+			}
 		}
 	}
 
