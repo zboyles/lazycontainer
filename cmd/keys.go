@@ -11,10 +11,12 @@ type keyMap struct {
 	ScrollUp   key.Binding
 	ScrollDown key.Binding
 	Actions    key.Binding
+	PageLeft   key.Binding
+	PageRight  key.Binding
 }
 
 func (k keyMap) ShortHelp() []key.Binding {
-	return []key.Binding{k.Tab, k.Enter, k.ScrollDown, k.ScrollUp, k.Actions, k.Quit}
+	return []key.Binding{k.Tab, k.Enter, k.ScrollDown, k.ScrollUp, k.PageLeft, k.PageRight, k.Actions, k.Quit}
 }
 
 func (k keyMap) FullHelp() [][]key.Binding {
@@ -22,6 +24,7 @@ func (k keyMap) FullHelp() [][]key.Binding {
 		{k.Up, k.Down},
 		{k.Tab, k.Enter, k.Quit},
 		{k.ScrollUp, k.ScrollDown},
+		{k.PageLeft, k.PageRight},
 	}
 }
 
@@ -57,5 +60,13 @@ var keys = keyMap{
 	Actions: key.NewBinding(
 		key.WithKeys("m"),
 		key.WithHelp("m", "menu"),
+	),
+	PageLeft: key.NewBinding(
+		key.WithKeys("f"),
+		key.WithHelp("f", "page left"),
+	),
+	PageRight: key.NewBinding(
+		key.WithKeys("g"),
+		key.WithHelp("g", "page right"),
 	),
 }

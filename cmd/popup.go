@@ -77,6 +77,9 @@ func (p *popupModel) OpenContext(items []actionItem) {
 		li = append(li, actionItem{title: t, desc: it.desc, enabled: it.enabled, onSelect: it.onSelect})
 	}
 	p.list.SetItems(li)
+	// Reset selection and filters so a new open starts from the top.
+	p.list.Select(0)
+	p.list.ResetFilter()
 	p.active = true
 	p.ptype = popupContext
 }
